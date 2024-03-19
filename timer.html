@@ -1,13 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Time Calculator</title>
+<title>时间计算器</title>
 <style>
+    h2 {
+        text-align: center;
+    }
     body {
         font-family: Arial, sans-serif;
         padding: 10px;
+    }
+    .project-container {
+        margin-bottom: 20px;
+    }
+    .project-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    .project-header input[type="text"] {
+        padding: 5px;
+        font-size: 16px;
+    }
+    .project-header button {
+        padding: 5px 10px;
     }
     table {
         width: 100%;
@@ -21,10 +40,6 @@
         padding: 8px;
         text-align: left;
     }
-    button {
-        padding: 5px 10px;
-        margin-top: 10px;
-    }
     .duration, .totalTime {
         text-align: right;
     }
@@ -36,7 +51,7 @@
             width: 100%;
             margin-bottom: 10px;
         }
-        input[type="time"] {
+        input[type="time"], input[type="text"] {
             width: 100%;
         }
     }
@@ -44,38 +59,15 @@
 </head>
 <body>
 
-<h2>Time Calculator</h2>
+<h2>热电厂供水车间泵机运行时间统计</h2>
 
-<table id="timeTable">
-    <tr>
-        <th>开始时间</th>
-        <th>结束时间</th>
-        <th>时长</th>
-        <th>删除</th>
-    </tr>
-    <!-- Rows will be added here dynamically -->
-</table>
 
-<button onclick="addRow()">增加时间段</button>
-
-<div id="totalTime">
-    <strong>总时长:</strong> <span id="totalHours">0</span> hours <span id="totalMinutes">0</span> minutes
+<div id="projects">
+    <!-- 项目将在这里动态添加 -->
 </div>
 
+<button onclick="addProject()">增加项目</button>
 <script>
-    function addRow() {
-        const table = document.getElementById("timeTable");
-        const row = table.insertRow();
-        const startTimeCell = row.insertCell(0);
-        const endTimeCell = row.insertCell(1);
-        const durationCell = row.insertCell(2);
-        const actionsCell = row.insertCell(3);
-
-        startTimeCell.innerHTML = '<input type="time" onchange="calculateDuration(this)">';
-        endTimeCell.innerHTML = '<input type="time" onchange="calculateDuration(this)">';
-        durationCell.className = 'duration';
-        actionsCell.innerHTML = '<button onclick="deleteRow(this)">删除</button>';
-    }
 
     function calculateDuration(element) {
         const row = element.parentNode.parentNode;
@@ -96,35 +88,95 @@
 
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
-            durationCell.textContent = `${hours}h ${minutes}m`;
+            durationCell.textContent = `${hours}时 ${minutes}分`;
         } else {
             durationCell.textContent = '';
         }
 
-        calculateTotal();
+        calculateTotal(element.closest('.project-container'));
     }
 
-    function calculateTotal() {
-        const durations = document.querySelectorAll('.duration');
+    function calculateTotal(projectDiv) {
+        // 计算特定项目的总时长
+        const durations = projectDiv.querySelectorAll('.duration');
         let totalMinutes = 0;
         durations.forEach(cell => {
-            const parts = cell.textContent.match(/(\d+)h (\d+)m/);
+            const parts = cell.textContent.match(/(\d+)时 (\d+)分/);
             if (parts) {
                 const hours = parseInt(parts[1], 10);
                 const minutes = parseInt(parts[2], 10);
                 totalMinutes += (hours * 60) + minutes;
             }
         });
-        const totalHours = Math.floor(totalMinutes / 60);
-        const remainingMinutes = totalMinutes % 60;
-        document.getElementById("totalHours").textContent = totalHours;
-        document.getElementById("totalMinutes").textContent = remainingMinutes;
+        // 将总分钟数转换为小时，并保留两位小数
+        const totalHours = (totalMinutes / 60).toFixed(2);
+        // 更新特定项目的总时长显示
+        projectDiv.querySelector(".totalTime span").textContent = totalHours;
     }
+
 
     function deleteRow(button) {
         const row = button.parentNode.parentNode;
         row.parentNode.removeChild(row);
-        calculateTotal();
+        calculateTotal(button.closest('.project-container'));
+    }
+
+    function deleteProject(button) {
+        const projectDiv = button.closest('.project-container');
+        projectDiv.parentNode.removeChild(projectDiv);
+    }
+
+    function addRow(button) {
+        const projectDiv = button.parentNode;
+        const table = projectDiv.querySelector('table');
+        const row = table.insertRow();
+        const startTimeCell = row.insertCell(0);
+        const endTimeCell = row.insertCell(1);
+        const durationCell = row.insertCell(2);
+        const actionsCell = row.insertCell(3);
+
+        startTimeCell.innerHTML = '<input type="time" onchange="calculateDuration(this)">';
+        endTimeCell.innerHTML = '<input type="time" onchange="calculateDuration(this)">';
+        durationCell.className = 'duration';
+        actionsCell.innerHTML = '<button onclick="deleteRow(this)">删除</button>';
+        calculateTotal(button.closest('.project-container'));
+    }
+
+    let projectId = 0;
+
+    function addProject() {
+        projectId++;
+        const projectDiv = document.createElement('div');
+        projectDiv.className = 'project-container';
+        projectDiv.id = 'project-' + projectId;
+        projectDiv.innerHTML = `
+            <div class="project-header">
+                <input type="text" placeholder="项目名称" onchange="updateProjectName(this)">
+                <button onclick="deleteProject(this)">删除项目</button>
+            </div>
+            <table>
+                <tr>
+                    <th>开始时间</th>
+                    <th>结束时间</th>
+                    <th>时长</th>
+                    <th>操作</th>
+                </tr>
+                <!-- 时间行将在这里动态添加 -->
+            </table>
+            <button onclick="addRow(this)">增加时间</button>
+            <div class="totalTime">
+                <strong>总时长:</strong> <span>0.00</span> 小时
+            </div>
+        `;
+        document.getElementById('projects').appendChild(projectDiv);
+    }
+
+
+    function updateProjectName(input) {
+        const projectDiv = input.closest('.project-container');
+        const projectName = input.value.trim();
+        const projectNameElement = projectDiv.querySelector('.project-name');
+        projectNameElement.textContent = projectName;
     }
 </script>
 
