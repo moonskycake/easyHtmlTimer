@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Calculator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+    table, th, td {
+        border: 1px solid black;
+    }
+    th, td {
+        padding: 8px;
+        text-align: left;
+    }
+    button {
+        padding: 5px 10px;
+        margin-top: 10px;
+    }
+    .duration, .totalTime {
+        text-align: right;
+    }
+    @media (max-width: 600px) {
+        th, td {
+            padding: 6px;
+        }
+        button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        input[type="time"] {
+            width: 100%;
+        }
+    }
+</style>
+</head>
+<body>
+
+<h2>Time Calculator</h2>
+
+<table id="timeTable">
+    <tr>
+        <th>开始时间</th>
+        <th>结束时间</th>
+        <th>时长</th>
+        <th>删除</th>
+    </tr>
+    <!-- Rows will be added here dynamically -->
+</table>
+
+<button onclick="addRow()">增加时间段</button>
+
+<div id="totalTime">
+    <strong>总时长:</strong> <span id="totalHours">0</span> hours <span id="totalMinutes">0</span> minutes
+</div>
+
+<script>
+    function addRow() {
+        const table = document.getElementById("timeTable");
+        const row = table.insertRow();
+        const startTimeCell = row.insertCell(0);
+        const endTimeCell = row.insertCell(1);
+        const durationCell = row.insertCell(2);
+        const actionsCell = row.insertCell(3);
+
+        startTimeCell.innerHTML = '<input type="time" onchange="calculateDuration(this)">';
+        endTimeCell.innerHTML = '<input type="time" onchange="calculateDuration(this)">';
+        durationCell.className = 'duration';
+        actionsCell.innerHTML = '<button onclick="deleteRow(this)">删除</button>';
+    }
+
+    function calculateDuration(element) {
+        const row = element.parentNode.parentNode;
+        const startTimeInput = row.cells[0].children[0];
+        const endTimeInput = row.cells[1].children[0];
+        const durationCell = row.cells[2];
+
+        const startTime = startTimeInput.value;
+        const endTime = endTimeInput.value;
+
+        if (startTime && endTime) {
+            const start = new Date(`1970-01-01T${startTime}:00Z`);
+            const end = new Date(`1970-01-01T${endTime}:00Z`);
+            let duration = (end - start) / (1000 * 60); // convert milliseconds to minutes
+
+            // Handle next day case
+            if (duration < 0) duration += 24 * 60;
+
+            const hours = Math.floor(duration / 60);
+            const minutes = duration % 60;
+            durationCell.textContent = `${hours}h ${minutes}m`;
+        } else {
+            durationCell.textContent = '';
+        }
+
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        const durations = document.querySelectorAll('.duration');
+        let totalMinutes = 0;
+        durations.forEach(cell => {
+            const parts = cell.textContent.match(/(\d+)h (\d+)m/);
+            if (parts) {
+                const hours = parseInt(parts[1], 10);
+                const minutes = parseInt(parts[2], 10);
+                totalMinutes += (hours * 60) + minutes;
+            }
+        });
+        const totalHours = Math.floor(totalMinutes / 60);
+        const remainingMinutes = totalMinutes % 60;
+        document.getElementById("totalHours").textContent = totalHours;
+        document.getElementById("totalMinutes").textContent = remainingMinutes;
+    }
+
+    function deleteRow(button) {
+        const row = button.parentNode.parentNode;
+        row.parentNode.removeChild(row);
+        calculateTotal();
+    }
+</script>
+
+</body>
+</html>
